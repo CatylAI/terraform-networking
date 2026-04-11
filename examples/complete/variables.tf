@@ -7,7 +7,6 @@ variable "environment" {
 variable "region" {
   description = "AWS region."
   type        = string
-  default     = "us-east-1"
 }
 
 variable "vpc_cidr" {
@@ -31,5 +30,4 @@ variable "private_subnet_cidrs" {
 variable "domain_name" {
   description = "Domain name for Route53 and ACM."
   type        = string
-  default     = "catylai.com"
 }

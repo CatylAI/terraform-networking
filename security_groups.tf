@@ -37,13 +37,13 @@ resource "aws_security_group_rule" "alb_ingress_https" {
 }
 
 resource "aws_security_group_rule" "alb_egress_all" {
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  description       = "All outbound traffic"
-  security_group_id = aws_security_group.alb.id
+  type                     = "egress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.eks_nodes.id
+  description              = "Egress to EKS nodes (backend targets)"
+  security_group_id        = aws_security_group.alb.id
 }
 
 # -----------------------------------------------------------------------------
@@ -152,13 +152,33 @@ resource "aws_security_group_rule" "eks_nodes_ingress_alb" {
   security_group_id        = aws_security_group.eks_nodes.id
 }
 
-resource "aws_security_group_rule" "eks_nodes_egress_all" {
+resource "aws_security_group_rule" "eks_nodes_egress_https" {
   type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  description       = "All outbound traffic (ECR, DNS, internet via NAT)"
+  description       = "HTTPS to AWS APIs, ECR, and internet via NAT"
+  security_group_id = aws_security_group.eks_nodes.id
+}
+
+resource "aws_security_group_rule" "eks_nodes_egress_dns_tcp" {
+  type              = "egress"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "tcp"
+  cidr_blocks       = [var.vpc_cidr]
+  description       = "DNS TCP resolution within VPC"
+  security_group_id = aws_security_group.eks_nodes.id
+}
+
+resource "aws_security_group_rule" "eks_nodes_egress_dns_udp" {
+  type              = "egress"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "udp"
+  cidr_blocks       = [var.vpc_cidr]
+  description       = "DNS UDP resolution within VPC"
   security_group_id = aws_security_group.eks_nodes.id
 }
 
@@ -179,6 +199,10 @@ resource "aws_security_group" "rds" {
     create_before_destroy = true
   }
 }
+
+# NOTE: No explicit egress rules defined. AWS applies a default allow-all egress rule.
+# RDS/ElastiCache instances do not initiate outbound connections in normal operation.
+# This default is intentional — restrict if compliance requires explicit deny.
 
 resource "aws_security_group_rule" "rds_ingress_eks_nodes" {
   type                     = "ingress"
@@ -207,6 +231,10 @@ resource "aws_security_group" "elasticache" {
     create_before_destroy = true
   }
 }
+
+# NOTE: No explicit egress rules defined. AWS applies a default allow-all egress rule.
+# RDS/ElastiCache instances do not initiate outbound connections in normal operation.
+# This default is intentional — restrict if compliance requires explicit deny.
 
 resource "aws_security_group_rule" "elasticache_ingress_eks_nodes" {
   type                     = "ingress"
