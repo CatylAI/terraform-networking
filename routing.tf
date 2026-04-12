@@ -27,8 +27,11 @@ resource "aws_route_table_association" "public" {
 # Private Route Tables
 # -----------------------------------------------------------------------------
 
+# In HA mode, each AZ gets its own route table pointing to its own NAT gateway.
+# In non-HA mode, a single route table is shared across all private subnets,
+# routing through a single NAT gateway. See local.private_rt_count.
 resource "aws_route_table" "private" {
-  count = var.enable_ha_nat ? local.az_count : 1
+  count = local.private_rt_count
 
   vpc_id = aws_vpc.main.id
 
@@ -38,7 +41,7 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route" "private_nat" {
-  count = local.nat_gateway_count > 0 ? (var.enable_ha_nat ? local.az_count : 1) : 0
+  count = local.nat_gateway_count > 0 ? local.private_rt_count : 0
 
   route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"

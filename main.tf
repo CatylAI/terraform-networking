@@ -16,6 +16,11 @@ resource "aws_vpc" "main" {
       condition     = length(var.public_subnet_cidrs) == length(var.private_subnet_cidrs)
       error_message = "public_subnet_cidrs and private_subnet_cidrs must have the same length (one per AZ)."
     }
+
+    precondition {
+      condition     = !var.enable_acm || var.domain_name != ""
+      error_message = "domain_name must not be empty when enable_acm is true."
+    }
   }
 }
 
@@ -43,11 +48,13 @@ resource "aws_subnet" "public" {
   availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
-  tags = merge(local.merged_tags, {
-    Name                                                                         = "${local.name_prefix}-public-${local.azs[count.index]}"
-    "kubernetes.io/role/elb"                                                     = "1"
-    "kubernetes.io/cluster/${var.cluster_name != "" ? var.cluster_name : "any"}" = "shared"
-  })
+  tags = merge(local.merged_tags,
+    { Name = "${local.name_prefix}-public-${local.azs[count.index]}" },
+    var.cluster_name != "" ? {
+      "kubernetes.io/role/elb"                    = "1"
+      "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    } : {}
+  )
 }
 
 # -----------------------------------------------------------------------------
@@ -61,11 +68,13 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = local.azs[count.index]
 
-  tags = merge(local.merged_tags, {
-    Name                                                                         = "${local.name_prefix}-private-${local.azs[count.index]}"
-    "kubernetes.io/role/internal-elb"                                            = "1"
-    "kubernetes.io/cluster/${var.cluster_name != "" ? var.cluster_name : "any"}" = "shared"
-  })
+  tags = merge(local.merged_tags,
+    { Name = "${local.name_prefix}-private-${local.azs[count.index]}" },
+    var.cluster_name != "" ? {
+      "kubernetes.io/role/internal-elb"           = "1"
+      "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    } : {}
+  )
 }
 
 # -----------------------------------------------------------------------------
