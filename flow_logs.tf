@@ -7,6 +7,7 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
 
   name              = "/aws/vpc/flow-logs/${local.name_prefix}"
   retention_in_days = var.flow_log_retention_days
+  kms_key_id        = var.flow_log_kms_key_id
 
   tags = merge(local.merged_tags, {
     Name = "${local.name_prefix}-flow-logs"

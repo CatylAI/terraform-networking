@@ -104,6 +104,11 @@ variable "domain_name" {
   description = "Domain name for Route53 hosted zone and ACM certificate (e.g., catylai.com)."
   type        = string
   default     = ""
+
+  validation {
+    condition     = var.domain_name == "" || can(regex("^[a-zA-Z0-9][a-zA-Z0-9.-]+[a-zA-Z0-9]$", var.domain_name))
+    error_message = "Domain name must be a valid DNS name (alphanumeric, hyphens, dots, no spaces)."
+  }
 }
 
 variable "route53_zone_id" {
@@ -126,6 +131,22 @@ variable "certificate_sans" {
   description = "Additional Subject Alternative Names for the ACM certificate beyond the default wildcard."
   type        = list(string)
   default     = []
+}
+
+variable "flow_log_kms_key_id" {
+  description = "KMS key ARN for encrypting VPC flow log data. If omitted, uses default AWS encryption."
+  type        = string
+  default     = null
+}
+
+# -----------------------------------------------------------------------------
+# Kubernetes
+# -----------------------------------------------------------------------------
+
+variable "cluster_name" {
+  description = "EKS cluster name for subnet discovery tags. When empty, uses placeholder 'any'."
+  type        = string
+  default     = ""
 }
 
 # -----------------------------------------------------------------------------
