@@ -122,7 +122,7 @@ variable "route53_zone_id" {
 # -----------------------------------------------------------------------------
 
 variable "enable_acm" {
-  description = "Create an ACM certificate with DNS validation via Route53."
+  description = "Create an ACM certificate with DNS validation via Route53. Requires domain_name to be set."
   type        = bool
   default     = true
 }
@@ -133,6 +133,12 @@ variable "certificate_sans" {
   default     = []
 }
 
+variable "enable_flow_logs_s3_archival" {
+  description = "Enable S3 archival for VPC flow logs with Glacier lifecycle transition. Requires enable_flow_logs = true."
+  type        = bool
+  default     = false
+}
+
 variable "flow_log_kms_key_id" {
   description = "KMS key ARN for encrypting VPC flow log data. If omitted, uses default AWS encryption."
   type        = string
@@ -140,11 +146,21 @@ variable "flow_log_kms_key_id" {
 }
 
 # -----------------------------------------------------------------------------
+# NACLs
+# -----------------------------------------------------------------------------
+
+variable "enable_nacls" {
+  description = "Create subnet-level Network ACLs for public and private subnets."
+  type        = bool
+  default     = true
+}
+
+# -----------------------------------------------------------------------------
 # Kubernetes
 # -----------------------------------------------------------------------------
 
 variable "cluster_name" {
-  description = "EKS cluster name for subnet discovery tags. When empty, uses placeholder 'any'."
+  description = "EKS cluster name for subnet discovery tags. When empty, K8s tags are omitted from subnets."
   type        = string
   default     = ""
 }

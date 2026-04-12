@@ -162,15 +162,21 @@ resource "aws_security_group_rule" "eks_nodes_ingress_alb" {
   security_group_id        = aws_security_group.eks_nodes.id
 }
 
-# Covers: ECR image pulls (via NAT), AWS API calls, and kubelet -> EKS API server (port 443).
-# If you restrict this to VPC-only in the future, add an explicit rule for the EKS cluster SG.
+# This rule uses 0.0.0.0/0 because EKS nodes need HTTPS access to multiple AWS services:
+#   1. ECR (container image pulls) — regional endpoints, IPs vary
+#   2. EKS API server — control plane endpoint outside VPC
+#   3. AWS APIs (STS, CloudWatch, S3) — regional endpoints via NAT gateway
+#   4. Third-party container registries (if used) — via NAT gateway
+#
+# To restrict further, replace this rule with VPC endpoint rules for ECR, S3, STS,
+# CloudWatch, plus an explicit rule for the EKS cluster security group on port 443.
 resource "aws_security_group_rule" "eks_nodes_egress_https" {
   type              = "egress"
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  description       = "HTTPS to AWS APIs, ECR, EKS API server, and internet via NAT"
+  description       = "HTTPS to ECR, EKS API, AWS APIs, and internet via NAT"
   security_group_id = aws_security_group.eks_nodes.id
 }
 
@@ -212,9 +218,15 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# NOTE: No explicit egress rules defined. AWS applies a default allow-all egress rule.
-# RDS/ElastiCache instances do not initiate outbound connections in normal operation.
-# This default is intentional — restrict if compliance requires explicit deny.
+resource "aws_security_group_rule" "rds_egress_vpc" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = [var.vpc_cidr]
+  security_group_id = aws_security_group.rds.id
+  description       = "Allow egress only within VPC"
+}
 
 resource "aws_security_group_rule" "rds_ingress_eks_nodes" {
   type                     = "ingress"
@@ -244,9 +256,15 @@ resource "aws_security_group" "elasticache" {
   }
 }
 
-# NOTE: No explicit egress rules defined. AWS applies a default allow-all egress rule.
-# RDS/ElastiCache instances do not initiate outbound connections in normal operation.
-# This default is intentional — restrict if compliance requires explicit deny.
+resource "aws_security_group_rule" "elasticache_egress_vpc" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = [var.vpc_cidr]
+  security_group_id = aws_security_group.elasticache.id
+  description       = "Allow egress only within VPC"
+}
 
 resource "aws_security_group_rule" "elasticache_ingress_eks_nodes" {
   type                     = "ingress"
