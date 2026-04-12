@@ -53,7 +53,6 @@ output "nat_gateway_ids" {
 output "nat_gateway_public_ips" {
   description = "Elastic IP addresses of NAT gateways."
   value       = aws_eip.nat[*].public_ip
-  sensitive   = true
 }
 
 # -----------------------------------------------------------------------------

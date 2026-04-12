@@ -73,6 +73,7 @@ module "eks" {
 | `route53_zone_id` | Existing Route53 zone ID (skip zone creation) | `string` | `""` | no |
 | `enable_acm` | Create ACM certificate | `bool` | `true` | no |
 | `certificate_sans` | Additional SANs beyond the default wildcard | `list(string)` | `[]` | no |
+| `cluster_name` | EKS cluster name for subnet discovery tags (empty = placeholder `any`) | `string` | `""` | no |
 | `tags` | Additional tags to merge with common tags | `map(string)` | `{}` | no |
 
 ## Outputs

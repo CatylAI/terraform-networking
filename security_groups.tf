@@ -36,7 +36,7 @@ resource "aws_security_group_rule" "alb_ingress_https" {
   security_group_id = aws_security_group.alb.id
 }
 
-resource "aws_security_group_rule" "alb_egress_all" {
+resource "aws_security_group_rule" "alb_egress_nodes" {
   type                     = "egress"
   from_port                = 0
   to_port                  = 65535
@@ -44,6 +44,16 @@ resource "aws_security_group_rule" "alb_egress_all" {
   source_security_group_id = aws_security_group.eks_nodes.id
   description              = "Egress to EKS nodes (backend targets)"
   security_group_id        = aws_security_group.alb.id
+}
+
+resource "aws_security_group_rule" "alb_egress_https" {
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "HTTPS to AWS APIs (certificate validation, WAF, Cognito)"
+  security_group_id = aws_security_group.alb.id
 }
 
 # -----------------------------------------------------------------------------
@@ -152,13 +162,15 @@ resource "aws_security_group_rule" "eks_nodes_ingress_alb" {
   security_group_id        = aws_security_group.eks_nodes.id
 }
 
+# Covers: ECR image pulls (via NAT), AWS API calls, and kubelet -> EKS API server (port 443).
+# If you restrict this to VPC-only in the future, add an explicit rule for the EKS cluster SG.
 resource "aws_security_group_rule" "eks_nodes_egress_https" {
   type              = "egress"
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  description       = "HTTPS to AWS APIs, ECR, and internet via NAT"
+  description       = "HTTPS to AWS APIs, ECR, EKS API server, and internet via NAT"
   security_group_id = aws_security_group.eks_nodes.id
 }
 
