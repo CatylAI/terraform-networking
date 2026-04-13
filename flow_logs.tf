@@ -48,14 +48,15 @@ resource "aws_iam_role_policy" "flow_logs" {
     Statement = [
       {
         Action = [
-          "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
         ]
-        Effect   = "Allow"
-        Resource = "${aws_cloudwatch_log_group.flow_logs[0].arn}:*"
+        Effect = "Allow"
+        Resource = [
+          aws_cloudwatch_log_group.flow_logs[0].arn,
+          "${aws_cloudwatch_log_group.flow_logs[0].arn}:log-stream:*"
+        ]
       }
     ]
   })
@@ -98,6 +99,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "flow_logs" {
   rule {
     id     = "glacier-transition"
     status = "Enabled"
+
+    filter {}
 
     transition {
       days          = 90

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-12
+
+### Added
+
+- Optional VPC endpoints for ECR (API + DKR), S3 (Gateway), and STS (Interface), gated by `var.enable_vpc_endpoints` (default `false`)
+- VPC endpoints security group with HTTPS ingress from VPC CIDR only
+- `var.project_name` (string, default `"catylai"`) — configurable resource name prefix
+- Format validation on `var.certificate_sans` (DNS-label regex with optional leftmost `*` wildcard)
+- Format validation on `var.project_name` (lowercase alphanumeric + hyphens)
+
+### Changed
+
+- Replaced hardcoded `"catylai"` name prefix with `var.project_name` in `locals.tf` (backward-compatible: default matches prior behavior)
+- Scoped VPC flow logs IAM policy from `Resource = "*"` to the specific log group ARN + `:log-stream:*` form; dropped unnecessary `logs:CreateLogGroup` and `logs:DescribeLogGroups` actions
+
+### Fixed
+
+- Added explicit empty `filter {}` block to `aws_s3_bucket_lifecycle_configuration.flow_logs` — silences AWS provider warning and keeps the rule valid in provider v6.x (where the unfiltered form becomes an error)
+
 ## [0.1.0] - 2026-04-03
 
 ### Added
