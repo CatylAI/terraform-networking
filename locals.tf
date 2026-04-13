@@ -1,8 +1,8 @@
 locals {
-  name_prefix = "catylai-${var.environment}"
+  name_prefix = "${var.project_name}-${var.environment}"
 
   common_tags = {
-    Project     = "catylai"
+    Project     = var.project_name
     Environment = var.environment
     ManagedBy   = "terraform"
     Team        = "platform"

@@ -131,6 +131,14 @@ variable "certificate_sans" {
   description = "Additional Subject Alternative Names for the ACM certificate beyond the default wildcard."
   type        = list(string)
   default     = []
+
+  validation {
+    condition = alltrue([
+      for san in var.certificate_sans :
+      can(regex("^(\\*\\.)?([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$", san))
+    ])
+    error_message = "certificate_sans must be valid DNS names. Wildcards (*) are allowed only at the leftmost label (e.g., *.example.com)."
+  }
 }
 
 variable "enable_flow_logs_s3_archival" {
@@ -173,4 +181,29 @@ variable "tags" {
   description = "Additional tags to apply to all resources."
   type        = map(string)
   default     = {}
+}
+
+# -----------------------------------------------------------------------------
+# Naming
+# -----------------------------------------------------------------------------
+
+variable "project_name" {
+  description = "Project name prefix for all resources (e.g., catylai, myproject)."
+  type        = string
+  default     = "catylai"
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9-]*[a-z0-9]$", var.project_name))
+    error_message = "project_name must start and end with lowercase alphanumeric, and contain only lowercase letters, digits, and hyphens."
+  }
+}
+
+# -----------------------------------------------------------------------------
+# VPC Endpoints (optional)
+# -----------------------------------------------------------------------------
+
+variable "enable_vpc_endpoints" {
+  description = "Create VPC endpoints for ECR (API+DKR), S3 (Gateway), and STS (Interface). Recommended for private subnets without NAT egress."
+  type        = bool
+  default     = false
 }
