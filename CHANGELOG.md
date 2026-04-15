@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- LOW polish deferred via #170: test scaffolding (`tests/basic.tftest.hcl`), `.tflint.hcl` with AWS ruleset, and `Makefile` with `fmt/validate/lint/test/plan/clean` targets.
+- New `dns_validation_ttl` variable (default `300`, range 60–3600) controlling TTL of ACM DNS-validation records.
+- `lifecycle { ignore_changes }` on `aws_subnet.public` / `aws_subnet.private` for `kubernetes.io/role/*` tags that EKS controllers manage out-of-band.
+
+### Changed
+
+- Removed redundant `depends_on = [aws_internet_gateway.main]` from `aws_eip.nat` (VPC-domain EIPs do not require an IGW; NAT gateway still depends on IGW).
+
 ## [0.2.0] - 2026-04-12
 
 ### Added

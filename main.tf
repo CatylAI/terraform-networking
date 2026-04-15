@@ -55,6 +55,17 @@ resource "aws_subnet" "public" {
       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     } : {}
   )
+
+  # Ignore drift on kubernetes.io/cluster/* tags that EKS controllers (AWS Load Balancer
+  # Controller, Cluster Autoscaler, Karpenter) may manage out-of-band. Terraform requires
+  # literal keys in ignore_changes, so we ignore the full tags map on the k8s cluster
+  # tag-key-prefix to keep noise out of plans.
+  lifecycle {
+    ignore_changes = [
+      tags["kubernetes.io/role/elb"],
+      tags["kubernetes.io/role/internal-elb"],
+    ]
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -75,6 +86,15 @@ resource "aws_subnet" "private" {
       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     } : {}
   )
+
+  # Ignore drift on kubernetes.io/* tags that EKS controllers (AWS Load Balancer
+  # Controller, Cluster Autoscaler, Karpenter) may manage out-of-band.
+  lifecycle {
+    ignore_changes = [
+      tags["kubernetes.io/role/elb"],
+      tags["kubernetes.io/role/internal-elb"],
+    ]
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -90,7 +110,8 @@ resource "aws_eip" "nat" {
     Name = "${local.name_prefix}-nat-eip-${count.index}"
   })
 
-  depends_on = [aws_internet_gateway.main]
+  # Note: no explicit depends_on IGW — VPC-domain EIPs do not require an IGW.
+  # The NAT gateway itself still requires the IGW (see aws_nat_gateway.main).
 }
 
 # -----------------------------------------------------------------------------

@@ -141,6 +141,17 @@ variable "certificate_sans" {
   }
 }
 
+variable "dns_validation_ttl" {
+  description = "TTL (seconds) for Route53 DNS-validation records used by ACM. Lower values speed up issuance/renewal; higher values reduce query load."
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.dns_validation_ttl >= 60 && var.dns_validation_ttl <= 3600
+    error_message = "dns_validation_ttl must be between 60 and 3600 seconds."
+  }
+}
+
 variable "enable_flow_logs_s3_archival" {
   description = "Enable S3 archival for VPC flow logs with Glacier lifecycle transition. Requires enable_flow_logs = true."
   type        = bool

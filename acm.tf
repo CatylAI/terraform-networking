@@ -44,7 +44,7 @@ resource "aws_route53_record" "acm_validation" {
   allow_overwrite = true
   name            = each.value.name
   records         = [each.value.record]
-  ttl             = 60
+  ttl             = var.dns_validation_ttl
   type            = each.value.type
   zone_id         = local.zone_id
 }
